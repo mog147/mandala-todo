@@ -615,6 +615,63 @@
   .sheet-action.danger { color: var(--danger); }
   .sheet-action.danger .material-icons-round { color: var(--danger); }
 
+  /* === Export Reminder Banner === */
+  .reminder-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: var(--text-primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 2000;
+    transform: translateY(-100%);
+    transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+
+  .reminder-banner.show { transform: translateY(0); }
+
+  .reminder-banner .material-icons-round { font-size: 18px; opacity: 0.7; }
+
+  .reminder-text { flex: 1; }
+
+  .reminder-btn {
+    background: #fff;
+    color: var(--text-primary);
+    border: none;
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+  }
+
+  .reminder-btn:hover { opacity: 0.85; }
+
+  .reminder-close {
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.5;
+    transition: opacity 0.15s;
+  }
+
+  .reminder-close:hover { opacity: 1; }
+
   /* === Responsive === */
   @media (min-width: 768px) {
     .page-header { padding-top: 48px; }
@@ -675,6 +732,16 @@
     <span>マンダラ</span>
   </button>
 </nav>
+
+<!-- Export Reminder Banner -->
+<div class="reminder-banner" id="reminder-banner">
+  <span class="material-icons-round">backup</span>
+  <span class="reminder-text">データのバックアップをおすすめします</span>
+  <button class="reminder-btn" onclick="exportAll()">エクスポート</button>
+  <button class="reminder-close" onclick="dismissReminder()">
+    <span class="material-icons-round">close</span>
+  </button>
+</div>
 
 <!-- Save Toast -->
 <div class="save-toast" id="save-toast">保存しました</div>
@@ -1044,6 +1111,54 @@ function importMandala(event) {
 
 updateQuarterLabel();
 buildMandalaGrid();
+
+// ===== Export Reminder =====
+// Show reminder if last export was more than 7 days ago (and data exists)
+function checkExportReminder() {
+  const hasData = todos.length > 0 || localStorage.getItem(getQuarterKey(viewYear, viewQuarter));
+  if (!hasData) return;
+
+  const lastExport = localStorage.getItem('lastExportDate');
+  const lastDismiss = localStorage.getItem('reminderDismissed');
+  const now = Date.now();
+  const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+
+  // Don't show if dismissed within 24 hours
+  if (lastDismiss && (now - parseInt(lastDismiss)) < 24 * 60 * 60 * 1000) return;
+
+  // Show if never exported or exported more than 7 days ago
+  if (!lastExport || (now - parseInt(lastExport)) > SEVEN_DAYS) {
+    setTimeout(() => {
+      document.getElementById('reminder-banner').classList.add('show');
+    }, 2000);
+  }
+}
+
+function exportAll() {
+  // Export both todos and mandala data
+  const allData = { todos };
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k.startsWith('mandala_') && k !== 'mandala_lastView') {
+      allData[k] = JSON.parse(localStorage.getItem(k));
+    }
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(allData, null, 2)], {type:'application/json'}));
+  a.download = `goal_planner_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+
+  localStorage.setItem('lastExportDate', String(Date.now()));
+  document.getElementById('reminder-banner').classList.remove('show');
+  showToast('バックアップを保存しました');
+}
+
+function dismissReminder() {
+  localStorage.setItem('reminderDismissed', String(Date.now()));
+  document.getElementById('reminder-banner').classList.remove('show');
+}
+
+checkExportReminder();
 </script>
 </body>
 </html>
