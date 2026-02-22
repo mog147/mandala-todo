@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>マンダラチャート & やりたいことリスト</title>
+<style>
+  :root {
+    --bg: #f5f5f0;
+    --card: #fff;
+    --border: #ddd;
+    --accent: #4a6fa5;
+    --accent-light: #e8eef5;
+    --danger: #c0392b;
+    --success: #27ae60;
+    --text: #333;
+    --text-light: #888;
+    --center-bg: #4a6fa5;
+    --center-text: #fff;
+    --sub-bg: #e8eef5;
+    --cell-bg: #fafafa;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  .app-header {
+    background: var(--accent);
+    color: #fff;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .app-header h1 { font-size: 1.2rem; font-weight: 600; }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+  }
+
+  .tab-btn {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+  }
+
+  .tab-btn.active, .tab-btn:hover {
+    background: rgba(255,255,255,0.3);
+  }
+
+  .tab-content { display: none; padding: 24px; max-width: 1200px; margin: 0 auto; }
+  .tab-content.active { display: block; }
+
+  /* === やりたいことリスト === */
+  .todo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .todo-header h2 { font-size: 1.4rem; }
+
+  .add-form {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .add-form input, .add-form select {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.9rem;
+  }
+
+  .add-form input { flex: 1; min-width: 200px; }
+
+  .btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: opacity 0.2s;
+  }
+
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-small { padding: 4px 10px; font-size: 0.8rem; }
+
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+  }
+
+  .filter-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  .todo-list { list-style: none; }
+
+  .todo-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s;
+  }
+
+  .todo-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
+  .todo-item.done { opacity: 0.5; }
+  .todo-item.done .todo-text { text-decoration: line-through; }
+
+  .todo-check {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--accent);
+  }
+
+  .todo-text {
+    flex: 1;
+    font-size: 0.95rem;
+  }
+
+  .todo-text-input {
+    flex: 1;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.95rem;
+  }
+
+  .todo-category {
+    font-size: 0.75rem;
+    padding: 2px 10px;
+    border-radius: 12px;
+    white-space: nowrap;
+  }
+
+  .cat-work { background: #e3f2fd; color: #1565c0; }
+  .cat-personal { background: #f3e5f5; color: #7b1fa2; }
+  .cat-health { background: #e8f5e9; color: #2e7d32; }
+  .cat-learning { background: #fff3e0; color: #e65100; }
+  .cat-other { background: #f5f5f5; color: #616161; }
+
+  .todo-actions {
+    display: flex;
+    gap: 4px;
+  }
+
+  .icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background 0.2s;
+    line-height: 1;
+  }
+
+  .icon-btn:hover { background: #f0f0f0; }
+
+  .empty-state {
+    text-align: center;
+    color: var(--text-light);
+    padding: 40px;
+    font-size: 0.95rem;
+  }
+
+  /* === マンダラチャート === */
+  .mandala-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .mandala-header h2 { font-size: 1.4rem; }
+
+  .quarter-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.9rem;
+    color: var(--text-light);
+  }
+
+  .quarter-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .quarter-nav button {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+
+  .quarter-label {
+    font-weight: 600;
+    color: var(--text);
+    min-width: 100px;
+    text-align: center;
+  }
+
+  .mandala-desc {
+    color: var(--text-light);
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+
+  .mandala-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .mandala-block {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--border);
+  }
+
+  .mandala-block.center-block {
+    border-color: var(--accent);
+  }
+
+  .mandala-cell {
+    background: var(--cell-bg);
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+  }
+
+  .mandala-cell textarea {
+    width: 100%;
+    height: 100%;
+    min-height: 56px;
+    border: none;
+    background: transparent;
+    text-align: center;
+    font-size: 0.75rem;
+    resize: none;
+    font-family: inherit;
+    color: var(--text);
+    line-height: 1.3;
+    padding: 4px;
+  }
+
+  .mandala-cell textarea:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+    border-radius: 2px;
+  }
+
+  .mandala-cell.center-cell {
+    background: var(--center-bg);
+  }
+
+  .mandala-cell.center-cell textarea {
+    color: var(--center-text);
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+
+  .mandala-cell.sub-center {
+    background: var(--sub-bg);
+  }
+
+  .mandala-cell.sub-center textarea {
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .mandala-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .save-indicator {
+    font-size: 0.8rem;
+    color: var(--success);
+    margin-left: 8px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .save-indicator.show { opacity: 1; }
+
+  @media (max-width: 768px) {
+    .mandala-grid { gap: 4px; }
+    .mandala-cell { min-height: 45px; }
+    .mandala-cell textarea { font-size: 0.65rem; min-height: 41px; }
+    .mandala-cell.center-cell textarea { font-size: 0.75rem; }
+    .tab-content { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <h1>Goal Planner</h1>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('todo')">やりたいことリスト</button>
+    <button class="tab-btn" onclick="switchTab('mandala')">マンダラチャート</button>
+  </div>
+</div>
+
+<!-- やりたいことリスト -->
+<div id="tab-todo" class="tab-content active">
+  <div class="todo-header">
+    <h2>やりたいことリスト</h2>
+  </div>
+  <div class="add-form">
+    <input type="text" id="todo-input" placeholder="やりたいことを入力..." onkeydown="if(event.key==='Enter')addTodo()">
+    <select id="todo-category">
+      <option value="personal">プライベート</option>
+      <option value="work">仕事</option>
+      <option value="health">健康</option>
+      <option value="learning">学び</option>
+      <option value="other">その他</option>
+    </select>
+    <button class="btn btn-primary" onclick="addTodo()">追加</button>
+  </div>
+
+  <div class="filter-bar" style="margin-top:16px;">
+    <button class="filter-btn active" data-filter="all" onclick="setFilter('all',this)">すべて</button>
+    <button class="filter-btn" data-filter="active" onclick="setFilter('active',this)">未完了</button>
+    <button class="filter-btn" data-filter="done" onclick="setFilter('done',this)">完了</button>
+    <button class="filter-btn" data-filter="work" onclick="setFilter('work',this)">仕事</button>
+    <button class="filter-btn" data-filter="personal" onclick="setFilter('personal',this)">プライベート</button>
+    <button class="filter-btn" data-filter="health" onclick="setFilter('health',this)">健康</button>
+    <button class="filter-btn" data-filter="learning" onclick="setFilter('learning',this)">学び</button>
+  </div>
+
+  <ul class="todo-list" id="todo-list"></ul>
+</div>
+
+<!-- マンダラチャート -->
+<div id="tab-mandala" class="tab-content">
+  <div class="mandala-header">
+    <h2>マンダラチャート <span class="save-indicator" id="save-indicator">保存しました</span></h2>
+    <div class="quarter-info">
+      <div class="quarter-nav">
+        <button onclick="changeQuarter(-1)">&larr;</button>
+        <span class="quarter-label" id="quarter-label"></span>
+        <button onclick="changeQuarter(1)">&rarr;</button>
+      </div>
+    </div>
+  </div>
+  <p class="mandala-desc">
+    中央に核となる目標を書き、周囲8マスにサブ目標を配置。各サブ目標をさらに8つのアクションに分解します。3ヶ月ごとに見直しましょう。
+  </p>
+  <div class="mandala-grid" id="mandala-grid"></div>
+  <div class="mandala-actions">
+    <button class="btn btn-primary" onclick="newQuarter()">新しい四半期を作成</button>
+    <button class="btn" style="background:#eee;" onclick="exportMandala()">エクスポート (JSON)</button>
+    <label class="btn" style="background:#eee;cursor:pointer;">
+      インポート
+      <input type="file" accept=".json" style="display:none" onchange="importMandala(event)">
+    </label>
+  </div>
+</div>
+
+<script>
+// ===== Tab Switching =====
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`).classList.add('active');
+}
+
+// ===== Todo List =====
+let todos = JSON.parse(localStorage.getItem('todos') || '[]');
+let currentFilter = 'all';
+
+const categoryLabels = {
+  work: '仕事', personal: 'プライベート', health: '健康', learning: '学び', other: 'その他'
+};
+
+function saveTodos() {
+  localStorage.setItem('todos', JSON.stringify(todos));
+}
+
+function addTodo() {
+  const input = document.getElementById('todo-input');
+  const cat = document.getElementById('todo-category').value;
+  const text = input.value.trim();
+  if (!text) return;
+  todos.push({ id: Date.now(), text, category: cat, done: false, createdAt: new Date().toISOString() });
+  input.value = '';
+  saveTodos();
+  renderTodos();
+}
+
+function toggleTodo(id) {
+  const t = todos.find(t => t.id === id);
+  if (t) t.done = !t.done;
+  saveTodos();
+  renderTodos();
+}
+
+function deleteTodo(id) {
+  todos = todos.filter(t => t.id !== id);
+  saveTodos();
+  renderTodos();
+}
+
+function startEdit(id) {
+  const t = todos.find(t => t.id === id);
+  if (!t) return;
+  t._editing = true;
+  renderTodos();
+  const input = document.querySelector(`[data-edit-id="${id}"]`);
+  if (input) { input.focus(); input.select(); }
+}
+
+function finishEdit(id) {
+  const t = todos.find(t => t.id === id);
+  if (!t) return;
+  const input = document.querySelector(`[data-edit-id="${id}"]`);
+  if (input && input.value.trim()) t.text = input.value.trim();
+  delete t._editing;
+  saveTodos();
+  renderTodos();
+}
+
+function setFilter(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTodos();
+}
+
+function renderTodos() {
+  const list = document.getElementById('todo-list');
+  let filtered = todos;
+  if (currentFilter === 'active') filtered = todos.filter(t => !t.done);
+  else if (currentFilter === 'done') filtered = todos.filter(t => t.done);
+  else if (['work','personal','health','learning','other'].includes(currentFilter))
+    filtered = todos.filter(t => t.category === currentFilter);
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty-state">まだ項目がありません。やりたいことを追加しましょう!</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(t => `
+    <li class="todo-item ${t.done ? 'done' : ''}">
+      <input type="checkbox" class="todo-check" ${t.done ? 'checked' : ''} onchange="toggleTodo(${t.id})">
+      ${t._editing
+        ? `<input type="text" class="todo-text-input" data-edit-id="${t.id}" value="${t.text.replace(/"/g,'&quot;')}" onblur="finishEdit(${t.id})" onkeydown="if(event.key==='Enter')finishEdit(${t.id})">`
+        : `<span class="todo-text" ondblclick="startEdit(${t.id})">${escHtml(t.text)}</span>`
+      }
+      <span class="todo-category cat-${t.category}">${categoryLabels[t.category] || t.category}</span>
+      <div class="todo-actions">
+        <button class="icon-btn" onclick="startEdit(${t.id})" title="編集">&#9998;</button>
+        <button class="icon-btn" onclick="deleteTodo(${t.id})" title="削除">&#10005;</button>
+      </div>
+    </li>
+  `).join('');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+renderTodos();
+
+// ===== Mandala Chart =====
+// Block positions: the 3x3 outer grid maps sub-goals.
+// Block index 4 = center block. Each block has 9 cells (3x3).
+// In the center block, cell 4 = main goal, others = sub-goal labels.
+// In surrounding blocks, cell 4 = sub-goal label (mirror), others = action items.
+
+// blockOrder maps surrounding block index to which cell in center block
+// Center block cells: 0=TL,1=TC,2=TR,3=ML,4=CENTER,5=MR,6=BL,7=BC,8=BR
+// Outer blocks in reading order: 0=TL,1=TC,2=TR,3=ML,5=MR,6=BL,7=BC,8=BR
+const blockToCenter = { 0:0, 1:1, 2:2, 3:3, 5:5, 6:6, 7:7, 8:8 };
+
+function getQuarterKey(year, q) { return `mandala_${year}_Q${q}`; }
+
+function currentQuarterInfo() {
+  const now = new Date();
+  const m = now.getMonth();
+  const q = Math.floor(m / 3) + 1;
+  return { year: now.getFullYear(), quarter: q };
+}
+
+let viewYear, viewQuarter;
+const cqi = currentQuarterInfo();
+viewYear = cqi.year;
+viewQuarter = cqi.quarter;
+
+// Try to load the last viewed quarter
+const lastView = localStorage.getItem('mandala_lastView');
+if (lastView) {
+  try {
+    const lv = JSON.parse(lastView);
+    viewYear = lv.year;
+    viewQuarter = lv.quarter;
+  } catch(e) {}
+}
+
+function loadMandala() {
+  const key = getQuarterKey(viewYear, viewQuarter);
+  const data = localStorage.getItem(key);
+  if (data) return JSON.parse(data);
+  // Return empty 9 blocks x 9 cells
+  return Array.from({length:9}, () => Array(9).fill(''));
+}
+
+function saveMandala(data) {
+  const key = getQuarterKey(viewYear, viewQuarter);
+  localStorage.setItem(key, JSON.stringify(data));
+  localStorage.setItem('mandala_lastView', JSON.stringify({year:viewYear,quarter:viewQuarter}));
+  showSaveIndicator();
+}
+
+function showSaveIndicator() {
+  const el = document.getElementById('save-indicator');
+  el.classList.add('show');
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => el.classList.remove('show'), 1500);
+}
+
+function updateQuarterLabel() {
+  document.getElementById('quarter-label').textContent = `${viewYear}年 Q${viewQuarter}`;
+}
+
+function changeQuarter(dir) {
+  viewQuarter += dir;
+  if (viewQuarter > 4) { viewQuarter = 1; viewYear++; }
+  if (viewQuarter < 1) { viewQuarter = 4; viewYear--; }
+  localStorage.setItem('mandala_lastView', JSON.stringify({year:viewYear,quarter:viewQuarter}));
+  updateQuarterLabel();
+  buildMandalaGrid();
+}
+
+function newQuarter() {
+  const next = { ...currentQuarterInfo() };
+  // Move to next quarter
+  next.quarter++;
+  if (next.quarter > 4) { next.quarter = 1; next.year++; }
+  const key = getQuarterKey(next.year, next.quarter);
+  if (localStorage.getItem(key)) {
+    if (!confirm(`${next.year}年 Q${next.quarter} は既に存在します。上書きしますか?`)) return;
+  }
+  // Copy current data as starting point
+  const current = loadMandala();
+  viewYear = next.year;
+  viewQuarter = next.quarter;
+  saveMandala(current);
+  updateQuarterLabel();
+  buildMandalaGrid();
+}
+
+let mandalaData;
+
+function buildMandalaGrid() {
+  mandalaData = loadMandala();
+  const grid = document.getElementById('mandala-grid');
+  grid.innerHTML = '';
+
+  for (let blockIdx = 0; blockIdx < 9; blockIdx++) {
+    const block = document.createElement('div');
+    block.className = 'mandala-block' + (blockIdx === 4 ? ' center-block' : '');
+
+    for (let cellIdx = 0; cellIdx < 9; cellIdx++) {
+      const cell = document.createElement('div');
+      cell.className = 'mandala-cell';
+
+      const isMainCenter = (blockIdx === 4 && cellIdx === 4);
+      const isSubCenter = (blockIdx === 4 && cellIdx !== 4) || (blockIdx !== 4 && cellIdx === 4);
+
+      if (isMainCenter) cell.classList.add('center-cell');
+      else if (isSubCenter) cell.classList.add('sub-center');
+
+      const ta = document.createElement('textarea');
+      ta.value = mandalaData[blockIdx][cellIdx];
+      ta.placeholder = isMainCenter ? '核心目標' : (isSubCenter ? 'サブ目標' : '');
+      ta.dataset.block = blockIdx;
+      ta.dataset.cell = cellIdx;
+
+      ta.addEventListener('input', function() {
+        const bi = parseInt(this.dataset.block);
+        const ci = parseInt(this.dataset.cell);
+        mandalaData[bi][ci] = this.value;
+
+        // Sync sub-goal labels between center block and surrounding blocks
+        if (bi === 4 && ci !== 4) {
+          // Find the corresponding outer block
+          for (const [outerBlock, centerCell] of Object.entries(blockToCenter)) {
+            if (centerCell === ci) {
+              mandalaData[parseInt(outerBlock)][4] = this.value;
+              const mirror = grid.querySelector(`textarea[data-block="${outerBlock}"][data-cell="4"]`);
+              if (mirror) mirror.value = this.value;
+            }
+          }
+        } else if (bi !== 4 && ci === 4) {
+          // Update center block
+          const centerCell = blockToCenter[bi];
+          if (centerCell !== undefined) {
+            mandalaData[4][centerCell] = this.value;
+            const mirror = grid.querySelector(`textarea[data-block="4"][data-cell="${centerCell}"]`);
+            if (mirror) mirror.value = this.value;
+          }
+        }
+
+        clearTimeout(ta._saveTimer);
+        ta._saveTimer = setTimeout(() => saveMandala(mandalaData), 500);
+      });
+
+      cell.appendChild(ta);
+      block.appendChild(cell);
+    }
+    grid.appendChild(block);
+  }
+}
+
+function exportMandala() {
+  const allData = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key.startsWith('mandala_') && key !== 'mandala_lastView') {
+      allData[key] = JSON.parse(localStorage.getItem(key));
+    }
+  }
+  const blob = new Blob([JSON.stringify(allData, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `mandala_export_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+function importMandala(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      for (const [key, value] of Object.entries(data)) {
+        localStorage.setItem(key, JSON.stringify(value));
+      }
+      buildMandalaGrid();
+      alert('インポートしました');
+    } catch(err) {
+      alert('ファイルの読み込みに失敗しました');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+updateQuarterLabel();
+buildMandalaGrid();
+</script>
+</body>
+</html>
