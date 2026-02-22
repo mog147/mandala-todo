@@ -253,6 +253,44 @@
     border-color: var(--text-primary);
   }
 
+  /* === Sort Bar === */
+  .sort-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .sort-label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-weight: 500;
+    margin-right: 2px;
+    white-space: nowrap;
+  }
+
+  .sort-chip {
+    background: transparent;
+    border: 1px solid var(--divider);
+    color: var(--text-tertiary);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border-radius: 100px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+
+  .sort-chip:hover { border-color: var(--text-tertiary); }
+
+  .sort-chip.active {
+    background: var(--accent-bg);
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
   /* === Todo Items === */
   .todo-list { list-style: none; }
 
@@ -335,6 +373,12 @@
     border-radius: 6px;
     letter-spacing: 0.02em;
     text-transform: uppercase;
+  }
+
+  .tag-quarter {
+    background: var(--accent-bg);
+    color: var(--accent);
+    font-weight: 700;
   }
 
   .tag-work { background: rgba(21,101,192,0.12); color: #42a5f5; }
@@ -828,9 +872,19 @@
         <option value="learning">学び</option>
         <option value="other">その他</option>
       </select>
+      <select class="category-select" id="todo-quarter">
+        <option value="">Q未設定</option>
+      </select>
       <button class="add-btn" onclick="addTodo()">
         <span class="material-icons-round">add</span>
       </button>
+    </div>
+
+    <div class="sort-bar">
+      <span class="sort-label">並び替え</span>
+      <button class="sort-chip active" data-sort="newest" onclick="setSort('newest',this)">新しい順</button>
+      <button class="sort-chip" data-sort="oldest" onclick="setSort('oldest',this)">古い順</button>
+      <button class="sort-chip" data-sort="quarter" onclick="setSort('quarter',this)">四半期順</button>
     </div>
 
     <div class="filters">
@@ -900,22 +954,54 @@ function showToast(msg) {
 // ===== Todo =====
 let todos = JSON.parse(localStorage.getItem('todos') || '[]');
 let currentFilter = 'all';
+let currentSort = 'newest';
 
 const categoryLabels = {
   work: '仕事', personal: 'プライベート', health: '健康', learning: '学び', other: 'その他'
 };
+
+// Populate quarter select with current year +/- 1
+function populateQuarterSelect() {
+  const sel = document.getElementById('todo-quarter');
+  const now = new Date();
+  const cy = now.getFullYear();
+  const cq = Math.floor(now.getMonth() / 3) + 1;
+  for (let y = cy; y <= cy + 1; y++) {
+    for (let q = 1; q <= 4; q++) {
+      const opt = document.createElement('option');
+      opt.value = `${y}-Q${q}`;
+      opt.textContent = `${y} Q${q}`;
+      if (y === cy && q === cq) opt.selected = true;
+      sel.appendChild(opt);
+    }
+  }
+}
+populateQuarterSelect();
 
 function saveTodos() { localStorage.setItem('todos', JSON.stringify(todos)); }
 
 function addTodo() {
   const input = document.getElementById('todo-input');
   const cat = document.getElementById('todo-category').value;
+  const quarter = document.getElementById('todo-quarter').value;
   const text = input.value.trim();
   if (!text) return;
-  todos.unshift({ id: Date.now(), text, category: cat, done: false, createdAt: new Date().toISOString() });
+  todos.unshift({ id: Date.now(), text, category: cat, quarter, done: false, createdAt: new Date().toISOString() });
   input.value = '';
   saveTodos();
   renderTodos();
+}
+
+function setSort(sort, btn) {
+  currentSort = sort;
+  document.querySelectorAll('.sort-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTodos();
+}
+
+function quarterSortKey(q) {
+  if (!q) return '9999-Q9';
+  return q;
 }
 
 function toggleTodo(id) {
@@ -959,11 +1045,20 @@ function setFilter(filter, btn) {
 
 function renderTodos() {
   const list = document.getElementById('todo-list');
-  let filtered = todos;
-  if (currentFilter === 'active') filtered = todos.filter(t => !t.done);
-  else if (currentFilter === 'done') filtered = todos.filter(t => t.done);
+  let filtered = [...todos];
+  if (currentFilter === 'active') filtered = filtered.filter(t => !t.done);
+  else if (currentFilter === 'done') filtered = filtered.filter(t => t.done);
   else if (['work','personal','health','learning','other'].includes(currentFilter))
-    filtered = todos.filter(t => t.category === currentFilter);
+    filtered = filtered.filter(t => t.category === currentFilter);
+
+  // Sort
+  if (currentSort === 'newest') {
+    filtered.sort((a, b) => b.id - a.id);
+  } else if (currentSort === 'oldest') {
+    filtered.sort((a, b) => a.id - b.id);
+  } else if (currentSort === 'quarter') {
+    filtered.sort((a, b) => quarterSortKey(a.quarter).localeCompare(quarterSortKey(b.quarter)));
+  }
 
   if (filtered.length === 0) {
     list.innerHTML = `
@@ -985,6 +1080,7 @@ function renderTodos() {
           : `<div class="todo-text">${escHtml(t.text)}</div>`
         }
         <div class="todo-meta">
+          ${t.quarter ? `<span class="todo-tag tag-quarter">${t.quarter.replace('-',' ')}</span>` : ''}
           <span class="todo-tag tag-${t.category}">${categoryLabels[t.category] || t.category}</span>
         </div>
       </div>
