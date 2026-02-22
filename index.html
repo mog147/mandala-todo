@@ -2,436 +2,790 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>マンダラチャート & やりたいことリスト</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Goal Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 <style>
   :root {
-    --bg: #f5f5f0;
-    --card: #fff;
-    --border: #ddd;
-    --accent: #4a6fa5;
-    --accent-light: #e8eef5;
-    --danger: #c0392b;
-    --success: #27ae60;
-    --text: #333;
-    --text-light: #888;
-    --center-bg: #4a6fa5;
-    --center-text: #fff;
-    --sub-bg: #e8eef5;
-    --cell-bg: #fafafa;
+    --bg: #f5f5f7;
+    --surface: #ffffff;
+    --text-primary: #1d1d1f;
+    --text-secondary: #86868b;
+    --text-tertiary: #aeaeb2;
+    --accent: #0071e3;
+    --accent-hover: #0077ED;
+    --accent-bg: rgba(0,113,227,0.08);
+    --danger: #ff3b30;
+    --success: #34c759;
+    --divider: rgba(0,0,0,0.06);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,0.08);
+    --radius: 14px;
+    --radius-sm: 10px;
+    --radius-xs: 8px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --nav-height: 64px;
   }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
     background: var(--bg);
-    color: var(--text);
+    color: var(--text-primary);
     min-height: 100vh;
+    min-height: 100dvh;
+    padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 16px);
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.01em;
   }
 
-  .app-header {
-    background: var(--accent);
-    color: #fff;
-    padding: 16px 24px;
+  /* === Bottom Navigation (Mobile First) === */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: calc(var(--nav-height) + var(--safe-bottom));
+    padding-bottom: var(--safe-bottom);
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-top: 0.5px solid var(--divider);
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
+    gap: 0;
+    z-index: 1000;
+  }
+
+  .nav-item {
+    flex: 1;
+    max-width: 160px;
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  }
-
-  .app-header h1 { font-size: 1.2rem; font-weight: 600; }
-
-  .tabs {
-    display: flex;
-    gap: 4px;
-  }
-
-  .tab-btn {
-    background: rgba(255,255,255,0.15);
-    color: #fff;
+    justify-content: center;
+    gap: 2px;
+    background: none;
     border: none;
-    padding: 8px 20px;
-    border-radius: 6px;
+    color: var(--text-tertiary);
+    font-size: 10px;
+    font-weight: 500;
     cursor: pointer;
-    font-size: 0.9rem;
-    transition: background 0.2s;
+    transition: color 0.2s;
+    padding: 8px 0;
+    font-family: inherit;
+    letter-spacing: 0;
   }
 
-  .tab-btn.active, .tab-btn:hover {
-    background: rgba(255,255,255,0.3);
+  .nav-item .material-icons-round { font-size: 26px; transition: color 0.2s; }
+  .nav-item.active { color: var(--accent); }
+
+  /* === Page Header === */
+  .page-header {
+    padding: 56px 20px 12px;
+    max-width: 680px;
+    margin: 0 auto;
   }
 
-  .tab-content { display: none; padding: 24px; max-width: 1200px; margin: 0 auto; }
+  .page-header h1 {
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  .page-header p {
+    color: var(--text-secondary);
+    font-size: 15px;
+    margin-top: 6px;
+    font-weight: 400;
+  }
+
+  /* === Tab Content === */
+  .tab-content { display: none; }
   .tab-content.active { display: block; }
 
-  /* === やりたいことリスト === */
-  .todo-header {
+  .content-area {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 20px 24px;
+  }
+
+  /* === Add Todo === */
+  .add-bar {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 6px 6px 6px 18px;
+    box-shadow: var(--shadow-sm);
     margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 12px;
+    transition: box-shadow 0.2s;
   }
 
-  .todo-header h2 { font-size: 1.4rem; }
-
-  .add-form {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
+  .add-bar:focus-within {
+    box-shadow: var(--shadow-md), 0 0 0 3px var(--accent-bg);
   }
 
-  .add-form input, .add-form select {
-    padding: 8px 12px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font-size: 0.9rem;
-  }
-
-  .add-form input { flex: 1; min-width: 200px; }
-
-  .btn {
-    padding: 8px 16px;
+  .add-bar input[type="text"] {
+    flex: 1;
     border: none;
-    border-radius: 6px;
+    outline: none;
+    font-size: 16px;
+    font-family: inherit;
+    color: var(--text-primary);
+    background: transparent;
+    min-width: 0;
+  }
+
+  .add-bar input::placeholder { color: var(--text-tertiary); }
+
+  .category-select {
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    background: var(--bg);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 12px;
+    border-radius: var(--radius-xs);
+    font-family: inherit;
     cursor: pointer;
-    font-size: 0.9rem;
-    transition: opacity 0.2s;
-  }
-
-  .btn:hover { opacity: 0.85; }
-  .btn-primary { background: var(--accent); color: #fff; }
-  .btn-danger { background: var(--danger); color: #fff; }
-  .btn-small { padding: 4px 10px; font-size: 0.8rem; }
-
-  .filter-bar {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-  }
-
-  .filter-btn {
-    background: var(--card);
-    border: 1px solid var(--border);
-    padding: 6px 14px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: all 0.2s;
-  }
-
-  .filter-btn.active {
-    background: var(--accent);
-    color: #fff;
-    border-color: var(--accent);
-  }
-
-  .todo-list { list-style: none; }
-
-  .todo-item {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 14px 16px;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    transition: all 0.2s;
-  }
-
-  .todo-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-
-  .todo-item.done { opacity: 0.5; }
-  .todo-item.done .todo-text { text-decoration: line-through; }
-
-  .todo-check {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-    accent-color: var(--accent);
-  }
-
-  .todo-text {
-    flex: 1;
-    font-size: 0.95rem;
-  }
-
-  .todo-text-input {
-    flex: 1;
-    border: 1px solid var(--accent);
-    border-radius: 4px;
-    padding: 4px 8px;
-    font-size: 0.95rem;
-  }
-
-  .todo-category {
-    font-size: 0.75rem;
-    padding: 2px 10px;
-    border-radius: 12px;
+    outline: none;
     white-space: nowrap;
   }
 
-  .cat-work { background: #e3f2fd; color: #1565c0; }
-  .cat-personal { background: #f3e5f5; color: #7b1fa2; }
-  .cat-health { background: #e8f5e9; color: #2e7d32; }
-  .cat-learning { background: #fff3e0; color: #e65100; }
-  .cat-other { background: #f5f5f5; color: #616161; }
-
-  .todo-actions {
+  .add-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
     display: flex;
-    gap: 4px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: transform 0.15s, background 0.2s;
+  }
+
+  .add-btn:active { transform: scale(0.92); }
+  .add-btn:hover { background: var(--accent-hover); }
+  .add-btn .material-icons-round { font-size: 22px; }
+
+  /* === Filters === */
+  .filters {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 2px 0;
+  }
+
+  .filters::-webkit-scrollbar { display: none; }
+
+  .filter-chip {
+    background: var(--surface);
+    border: 1.5px solid var(--divider);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 7px 16px;
+    border-radius: 100px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+
+  .filter-chip:hover { border-color: var(--text-tertiary); }
+
+  .filter-chip.active {
+    background: var(--text-primary);
+    color: #fff;
+    border-color: var(--text-primary);
+  }
+
+  /* === Todo Items === */
+  .todo-list { list-style: none; }
+
+  .todo-item {
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .todo-item.done { opacity: 0.45; }
+
+  .custom-check {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--divider);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    background: transparent;
+  }
+
+  .custom-check:hover { border-color: var(--accent); }
+
+  .custom-check.checked {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .custom-check .material-icons-round {
+    font-size: 16px;
+    color: #fff;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .custom-check.checked .material-icons-round { opacity: 1; }
+
+  .todo-body { flex: 1; min-width: 0; }
+
+  .todo-text {
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.4;
+    transition: all 0.2s;
+    word-break: break-word;
+  }
+
+  .todo-item.done .todo-text {
+    text-decoration: line-through;
+    color: var(--text-tertiary);
+  }
+
+  .todo-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .todo-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .tag-work { background: #e3f2fd; color: #1565c0; }
+  .tag-personal { background: #f3e5f5; color: #7b1fa2; }
+  .tag-health { background: #e8f5e9; color: #2e7d32; }
+  .tag-learning { background: #fff3e0; color: #e65100; }
+  .tag-other { background: #f0f0f0; color: #666; }
+
+  .todo-edit-input {
+    width: 100%;
+    border: none;
+    border-bottom: 2px solid var(--accent);
+    outline: none;
+    font-size: 16px;
+    font-family: inherit;
+    color: var(--text-primary);
+    background: transparent;
+    padding: 2px 0;
+  }
+
+  .todo-actions-menu {
+    display: flex;
+    gap: 2px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .todo-item:hover .todo-actions-menu { opacity: 1; }
+
+  @media (hover: none) {
+    .todo-actions-menu { opacity: 1; }
   }
 
   .icon-btn {
-    background: none;
+    width: 36px;
+    height: 36px;
     border: none;
+    background: none;
+    border-radius: 50%;
     cursor: pointer;
-    font-size: 1rem;
-    padding: 4px;
-    border-radius: 4px;
-    transition: background 0.2s;
-    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+    transition: all 0.15s;
   }
 
-  .icon-btn:hover { background: #f0f0f0; }
+  .icon-btn:hover { background: var(--bg); color: var(--text-secondary); }
+  .icon-btn .material-icons-round { font-size: 20px; }
 
   .empty-state {
     text-align: center;
-    color: var(--text-light);
-    padding: 40px;
-    font-size: 0.95rem;
+    padding: 60px 20px;
+    color: var(--text-tertiary);
   }
 
-  /* === マンダラチャート === */
-  .mandala-header {
+  .empty-state .material-icons-round {
+    font-size: 56px;
+    margin-bottom: 12px;
+    opacity: 0.3;
+  }
+
+  .empty-state p { font-size: 15px; font-weight: 400; }
+
+  /* === Mandala Chart === */
+  .mandala-toolbar {
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    flex-wrap: wrap;
+    margin-bottom: 16px;
     gap: 12px;
-  }
-
-  .mandala-header h2 { font-size: 1.4rem; }
-
-  .quarter-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 0.9rem;
-    color: var(--text-light);
   }
 
   .quarter-nav {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 4px;
+    box-shadow: var(--shadow-sm);
   }
 
   .quarter-nav button {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 4px 10px;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-xs);
     cursor: pointer;
-    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    transition: background 0.15s;
+    font-family: inherit;
   }
+
+  .quarter-nav button:hover { background: var(--bg); }
 
   .quarter-label {
+    font-size: 15px;
     font-weight: 600;
-    color: var(--text);
-    min-width: 100px;
+    min-width: 88px;
     text-align: center;
+    color: var(--text-primary);
   }
 
-  .mandala-desc {
-    color: var(--text-light);
-    font-size: 0.85rem;
-    margin-bottom: 20px;
-    line-height: 1.6;
+  .mandala-menu {
+    display: flex;
+    gap: 4px;
+  }
+
+  .mandala-menu-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: var(--surface);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.15s;
+    position: relative;
+  }
+
+  .mandala-menu-btn:hover { background: var(--bg); }
+  .mandala-menu-btn .material-icons-round { font-size: 20px; }
+
+  .save-toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-60px);
+    background: var(--text-primary);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 2000;
+    opacity: 0;
+    transition: all 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
+    pointer-events: none;
+  }
+
+  .save-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .mandala-container {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 20px 24px;
+    overflow-x: auto;
   }
 
   .mandala-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-    max-width: 900px;
-    margin: 0 auto;
+    gap: 4px;
+    min-width: 340px;
   }
 
   .mandala-block {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 2px;
-    border: 2px solid var(--border);
-    border-radius: 8px;
+    gap: 1.5px;
+    border-radius: var(--radius-sm);
     overflow: hidden;
-    background: var(--border);
+    background: var(--divider);
+    box-shadow: var(--shadow-sm);
   }
 
   .mandala-block.center-block {
-    border-color: var(--accent);
+    box-shadow: var(--shadow-md), 0 0 0 2px rgba(0,113,227,0.15);
   }
 
   .mandala-cell {
-    background: var(--cell-bg);
-    min-height: 60px;
+    background: var(--surface);
+    aspect-ratio: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 4px;
   }
 
   .mandala-cell textarea {
     width: 100%;
     height: 100%;
-    min-height: 56px;
     border: none;
     background: transparent;
     text-align: center;
-    font-size: 0.75rem;
+    font-size: 10px;
     resize: none;
     font-family: inherit;
-    color: var(--text);
+    color: var(--text-primary);
     line-height: 1.3;
-    padding: 4px;
+    padding: 4px 3px;
+    display: flex;
+    align-items: center;
+    transition: background 0.15s;
+  }
+
+  .mandala-cell textarea::placeholder {
+    color: var(--text-tertiary);
+    font-size: 9px;
   }
 
   .mandala-cell textarea:focus {
-    outline: 2px solid var(--accent);
-    outline-offset: -2px;
-    border-radius: 2px;
+    outline: none;
+    background: var(--accent-bg);
   }
 
   .mandala-cell.center-cell {
-    background: var(--center-bg);
+    background: var(--accent);
   }
 
   .mandala-cell.center-cell textarea {
-    color: var(--center-text);
+    color: #fff;
     font-weight: 700;
-    font-size: 0.85rem;
+    font-size: 12px;
+  }
+
+  .mandala-cell.center-cell textarea::placeholder {
+    color: rgba(255,255,255,0.5);
+    font-size: 10px;
   }
 
   .mandala-cell.sub-center {
-    background: var(--sub-bg);
+    background: var(--accent-bg);
   }
 
   .mandala-cell.sub-center textarea {
     font-weight: 600;
     color: var(--accent);
+    font-size: 10px;
   }
 
-  .mandala-actions {
-    display: flex;
-    gap: 8px;
+  .mandala-desc {
+    text-align: center;
+    color: var(--text-tertiary);
+    font-size: 12px;
     margin-top: 16px;
-    justify-content: center;
-    flex-wrap: wrap;
+    padding: 0 20px;
   }
 
-  .save-indicator {
-    font-size: 0.8rem;
-    color: var(--success);
-    margin-left: 8px;
+  /* === Bottom Sheet (for actions) === */
+  .sheet-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 3000;
     opacity: 0;
-    transition: opacity 0.3s;
+    visibility: hidden;
+    transition: all 0.3s;
   }
 
-  .save-indicator.show { opacity: 1; }
+  .sheet-overlay.show { opacity: 1; visibility: visible; }
 
-  @media (max-width: 768px) {
-    .mandala-grid { gap: 4px; }
-    .mandala-cell { min-height: 45px; }
-    .mandala-cell textarea { font-size: 0.65rem; min-height: 41px; }
-    .mandala-cell.center-cell textarea { font-size: 0.75rem; }
-    .tab-content { padding: 16px; }
+  .bottom-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-radius: 16px 16px 0 0;
+    z-index: 3001;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
+    padding: 12px 20px calc(var(--safe-bottom) + 20px);
+    max-height: 60vh;
+  }
+
+  .sheet-overlay.show .bottom-sheet { transform: translateY(0); }
+
+  .sheet-handle {
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--divider);
+    margin: 0 auto 16px;
+  }
+
+  .sheet-title {
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  .sheet-action {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 4px;
+    border: none;
+    background: none;
+    width: 100%;
+    font-size: 16px;
+    font-family: inherit;
+    color: var(--text-primary);
+    cursor: pointer;
+    border-radius: var(--radius-xs);
+    transition: background 0.15s;
+  }
+
+  .sheet-action:hover { background: var(--bg); }
+  .sheet-action .material-icons-round { color: var(--text-secondary); font-size: 22px; }
+
+  .sheet-action.danger { color: var(--danger); }
+  .sheet-action.danger .material-icons-round { color: var(--danger); }
+
+  /* === Responsive === */
+  @media (min-width: 768px) {
+    .page-header { padding-top: 48px; }
+    .mandala-cell textarea { font-size: 12px; padding: 6px; }
+    .mandala-cell.center-cell textarea { font-size: 14px; }
+    .mandala-cell.sub-center textarea { font-size: 12px; }
+    .mandala-cell textarea::placeholder { font-size: 11px; }
+    .mandala-cell.center-cell textarea::placeholder { font-size: 12px; }
+    .mandala-grid { gap: 6px; }
+    .mandala-block { gap: 2px; }
+    body { padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 24px); }
+  }
+
+  @media (min-width: 1024px) {
+    .bottom-nav {
+      top: 0;
+      bottom: auto;
+      height: 56px;
+      padding-bottom: 0;
+      flex-direction: row;
+      justify-content: center;
+      gap: 8px;
+      border-top: none;
+      border-bottom: 0.5px solid var(--divider);
+    }
+
+    .nav-item {
+      flex-direction: row;
+      gap: 6px;
+      padding: 8px 20px;
+      font-size: 14px;
+      max-width: none;
+      flex: none;
+      border-radius: var(--radius-xs);
+    }
+
+    .nav-item .material-icons-round { font-size: 20px; }
+
+    body {
+      padding-top: 72px;
+      padding-bottom: 24px;
+    }
+
+    .page-header { padding-top: 20px; }
   }
 </style>
 </head>
 <body>
 
-<div class="app-header">
-  <h1>Goal Planner</h1>
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('todo')">やりたいことリスト</button>
-    <button class="tab-btn" onclick="switchTab('mandala')">マンダラチャート</button>
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <button class="nav-item active" data-tab="todo" onclick="switchTab('todo')">
+    <span class="material-icons-round">check_circle</span>
+    <span>やりたいこと</span>
+  </button>
+  <button class="nav-item" data-tab="mandala" onclick="switchTab('mandala')">
+    <span class="material-icons-round">grid_view</span>
+    <span>マンダラ</span>
+  </button>
+</nav>
+
+<!-- Save Toast -->
+<div class="save-toast" id="save-toast">保存しました</div>
+
+<!-- Sheet overlay for mandala actions -->
+<div class="sheet-overlay" id="sheet-overlay" onclick="closeSheet()">
+  <div class="bottom-sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">アクション</div>
+    <button class="sheet-action" onclick="newQuarter();closeSheet();">
+      <span class="material-icons-round">add_circle_outline</span>
+      新しい四半期を作成
+    </button>
+    <button class="sheet-action" onclick="exportMandala();closeSheet();">
+      <span class="material-icons-round">download</span>
+      エクスポート (JSON)
+    </button>
+    <label class="sheet-action">
+      <span class="material-icons-round">upload</span>
+      インポート
+      <input type="file" accept=".json" style="display:none" onchange="importMandala(event);closeSheet();">
+    </label>
   </div>
 </div>
 
 <!-- やりたいことリスト -->
 <div id="tab-todo" class="tab-content active">
-  <div class="todo-header">
-    <h2>やりたいことリスト</h2>
+  <div class="page-header">
+    <h1>やりたいこと</h1>
+    <p>目標を書き出して、一つずつ達成しよう</p>
   </div>
-  <div class="add-form">
-    <input type="text" id="todo-input" placeholder="やりたいことを入力..." onkeydown="if(event.key==='Enter')addTodo()">
-    <select id="todo-category">
-      <option value="personal">プライベート</option>
-      <option value="work">仕事</option>
-      <option value="health">健康</option>
-      <option value="learning">学び</option>
-      <option value="other">その他</option>
-    </select>
-    <button class="btn btn-primary" onclick="addTodo()">追加</button>
-  </div>
+  <div class="content-area">
+    <div class="add-bar">
+      <input type="text" id="todo-input" placeholder="追加する..." onkeydown="if(event.key==='Enter')addTodo()">
+      <select class="category-select" id="todo-category">
+        <option value="personal">プライベート</option>
+        <option value="work">仕事</option>
+        <option value="health">健康</option>
+        <option value="learning">学び</option>
+        <option value="other">その他</option>
+      </select>
+      <button class="add-btn" onclick="addTodo()">
+        <span class="material-icons-round">add</span>
+      </button>
+    </div>
 
-  <div class="filter-bar" style="margin-top:16px;">
-    <button class="filter-btn active" data-filter="all" onclick="setFilter('all',this)">すべて</button>
-    <button class="filter-btn" data-filter="active" onclick="setFilter('active',this)">未完了</button>
-    <button class="filter-btn" data-filter="done" onclick="setFilter('done',this)">完了</button>
-    <button class="filter-btn" data-filter="work" onclick="setFilter('work',this)">仕事</button>
-    <button class="filter-btn" data-filter="personal" onclick="setFilter('personal',this)">プライベート</button>
-    <button class="filter-btn" data-filter="health" onclick="setFilter('health',this)">健康</button>
-    <button class="filter-btn" data-filter="learning" onclick="setFilter('learning',this)">学び</button>
-  </div>
+    <div class="filters">
+      <button class="filter-chip active" data-filter="all" onclick="setFilter('all',this)">すべて</button>
+      <button class="filter-chip" data-filter="active" onclick="setFilter('active',this)">未完了</button>
+      <button class="filter-chip" data-filter="done" onclick="setFilter('done',this)">完了</button>
+      <button class="filter-chip" data-filter="work" onclick="setFilter('work',this)">仕事</button>
+      <button class="filter-chip" data-filter="personal" onclick="setFilter('personal',this)">プライベート</button>
+      <button class="filter-chip" data-filter="health" onclick="setFilter('health',this)">健康</button>
+      <button class="filter-chip" data-filter="learning" onclick="setFilter('learning',this)">学び</button>
+    </div>
 
-  <ul class="todo-list" id="todo-list"></ul>
+    <ul class="todo-list" id="todo-list"></ul>
+  </div>
 </div>
 
 <!-- マンダラチャート -->
 <div id="tab-mandala" class="tab-content">
-  <div class="mandala-header">
-    <h2>マンダラチャート <span class="save-indicator" id="save-indicator">保存しました</span></h2>
-    <div class="quarter-info">
+  <div class="page-header">
+    <h1>マンダラチャート</h1>
+    <p>3ヶ月ごとに目標を見直す</p>
+  </div>
+  <div class="mandala-container">
+    <div class="mandala-toolbar">
       <div class="quarter-nav">
-        <button onclick="changeQuarter(-1)">&larr;</button>
+        <button onclick="changeQuarter(-1)">
+          <span class="material-icons-round">chevron_left</span>
+        </button>
         <span class="quarter-label" id="quarter-label"></span>
-        <button onclick="changeQuarter(1)">&rarr;</button>
+        <button onclick="changeQuarter(1)">
+          <span class="material-icons-round">chevron_right</span>
+        </button>
+      </div>
+      <div class="mandala-menu">
+        <button class="mandala-menu-btn" onclick="openSheet()">
+          <span class="material-icons-round">more_horiz</span>
+        </button>
       </div>
     </div>
-  </div>
-  <p class="mandala-desc">
-    中央に核となる目標を書き、周囲8マスにサブ目標を配置。各サブ目標をさらに8つのアクションに分解します。3ヶ月ごとに見直しましょう。
-  </p>
-  <div class="mandala-grid" id="mandala-grid"></div>
-  <div class="mandala-actions">
-    <button class="btn btn-primary" onclick="newQuarter()">新しい四半期を作成</button>
-    <button class="btn" style="background:#eee;" onclick="exportMandala()">エクスポート (JSON)</button>
-    <label class="btn" style="background:#eee;cursor:pointer;">
-      インポート
-      <input type="file" accept=".json" style="display:none" onchange="importMandala(event)">
-    </label>
+    <div class="mandala-grid" id="mandala-grid"></div>
+    <p class="mandala-desc">中央に核となる目標 → 8つのサブ目標 → 各8つのアクション</p>
   </div>
 </div>
 
 <script>
-// ===== Tab Switching =====
+// ===== Tabs =====
 function switchTab(tab) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
-  document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`).classList.add('active');
+  document.querySelector(`.nav-item[data-tab="${tab}"]`).classList.add('active');
 }
 
-// ===== Todo List =====
+// ===== Sheet =====
+function openSheet() { document.getElementById('sheet-overlay').classList.add('show'); }
+function closeSheet() { document.getElementById('sheet-overlay').classList.remove('show'); }
+
+// ===== Toast =====
+function showToast(msg) {
+  const el = document.getElementById('save-toast');
+  el.textContent = msg || '保存しました';
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+// ===== Todo =====
 let todos = JSON.parse(localStorage.getItem('todos') || '[]');
 let currentFilter = 'all';
 
@@ -439,16 +793,14 @@ const categoryLabels = {
   work: '仕事', personal: 'プライベート', health: '健康', learning: '学び', other: 'その他'
 };
 
-function saveTodos() {
-  localStorage.setItem('todos', JSON.stringify(todos));
-}
+function saveTodos() { localStorage.setItem('todos', JSON.stringify(todos)); }
 
 function addTodo() {
   const input = document.getElementById('todo-input');
   const cat = document.getElementById('todo-category').value;
   const text = input.value.trim();
   if (!text) return;
-  todos.push({ id: Date.now(), text, category: cat, done: false, createdAt: new Date().toISOString() });
+  todos.unshift({ id: Date.now(), text, category: cat, done: false, createdAt: new Date().toISOString() });
   input.value = '';
   saveTodos();
   renderTodos();
@@ -488,7 +840,7 @@ function finishEdit(id) {
 
 function setFilter(filter, btn) {
   currentFilter = filter;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderTodos();
 }
@@ -502,21 +854,35 @@ function renderTodos() {
     filtered = todos.filter(t => t.category === currentFilter);
 
   if (filtered.length === 0) {
-    list.innerHTML = '<div class="empty-state">まだ項目がありません。やりたいことを追加しましょう!</div>';
+    list.innerHTML = `
+      <div class="empty-state">
+        <span class="material-icons-round">lightbulb</span>
+        <p>やりたいことを追加しよう</p>
+      </div>`;
     return;
   }
 
   list.innerHTML = filtered.map(t => `
     <li class="todo-item ${t.done ? 'done' : ''}">
-      <input type="checkbox" class="todo-check" ${t.done ? 'checked' : ''} onchange="toggleTodo(${t.id})">
-      ${t._editing
-        ? `<input type="text" class="todo-text-input" data-edit-id="${t.id}" value="${t.text.replace(/"/g,'&quot;')}" onblur="finishEdit(${t.id})" onkeydown="if(event.key==='Enter')finishEdit(${t.id})">`
-        : `<span class="todo-text" ondblclick="startEdit(${t.id})">${escHtml(t.text)}</span>`
-      }
-      <span class="todo-category cat-${t.category}">${categoryLabels[t.category] || t.category}</span>
-      <div class="todo-actions">
-        <button class="icon-btn" onclick="startEdit(${t.id})" title="編集">&#9998;</button>
-        <button class="icon-btn" onclick="deleteTodo(${t.id})" title="削除">&#10005;</button>
+      <div class="custom-check ${t.done ? 'checked' : ''}" onclick="toggleTodo(${t.id})">
+        <span class="material-icons-round">check</span>
+      </div>
+      <div class="todo-body">
+        ${t._editing
+          ? `<input type="text" class="todo-edit-input" data-edit-id="${t.id}" value="${escHtml(t.text)}" onblur="finishEdit(${t.id})" onkeydown="if(event.key==='Enter')finishEdit(${t.id})">`
+          : `<div class="todo-text">${escHtml(t.text)}</div>`
+        }
+        <div class="todo-meta">
+          <span class="todo-tag tag-${t.category}">${categoryLabels[t.category] || t.category}</span>
+        </div>
+      </div>
+      <div class="todo-actions-menu">
+        <button class="icon-btn" onclick="startEdit(${t.id})" title="編集">
+          <span class="material-icons-round">edit</span>
+        </button>
+        <button class="icon-btn" onclick="deleteTodo(${t.id})" title="削除">
+          <span class="material-icons-round">delete_outline</span>
+        </button>
       </div>
     </li>
   `).join('');
@@ -528,24 +894,14 @@ function escHtml(s) {
 
 renderTodos();
 
-// ===== Mandala Chart =====
-// Block positions: the 3x3 outer grid maps sub-goals.
-// Block index 4 = center block. Each block has 9 cells (3x3).
-// In the center block, cell 4 = main goal, others = sub-goal labels.
-// In surrounding blocks, cell 4 = sub-goal label (mirror), others = action items.
-
-// blockOrder maps surrounding block index to which cell in center block
-// Center block cells: 0=TL,1=TC,2=TR,3=ML,4=CENTER,5=MR,6=BL,7=BC,8=BR
-// Outer blocks in reading order: 0=TL,1=TC,2=TR,3=ML,5=MR,6=BL,7=BC,8=BR
+// ===== Mandala =====
 const blockToCenter = { 0:0, 1:1, 2:2, 3:3, 5:5, 6:6, 7:7, 8:8 };
 
-function getQuarterKey(year, q) { return `mandala_${year}_Q${q}`; }
+function getQuarterKey(y, q) { return `mandala_${y}_Q${q}`; }
 
 function currentQuarterInfo() {
   const now = new Date();
-  const m = now.getMonth();
-  const q = Math.floor(m / 3) + 1;
-  return { year: now.getFullYear(), quarter: q };
+  return { year: now.getFullYear(), quarter: Math.floor(now.getMonth() / 3) + 1 };
 }
 
 let viewYear, viewQuarter;
@@ -553,40 +909,24 @@ const cqi = currentQuarterInfo();
 viewYear = cqi.year;
 viewQuarter = cqi.quarter;
 
-// Try to load the last viewed quarter
-const lastView = localStorage.getItem('mandala_lastView');
-if (lastView) {
-  try {
-    const lv = JSON.parse(lastView);
-    viewYear = lv.year;
-    viewQuarter = lv.quarter;
-  } catch(e) {}
-}
+try {
+  const lv = JSON.parse(localStorage.getItem('mandala_lastView'));
+  if (lv) { viewYear = lv.year; viewQuarter = lv.quarter; }
+} catch(e) {}
 
 function loadMandala() {
-  const key = getQuarterKey(viewYear, viewQuarter);
-  const data = localStorage.getItem(key);
-  if (data) return JSON.parse(data);
-  // Return empty 9 blocks x 9 cells
-  return Array.from({length:9}, () => Array(9).fill(''));
+  const d = localStorage.getItem(getQuarterKey(viewYear, viewQuarter));
+  return d ? JSON.parse(d) : Array.from({length:9}, () => Array(9).fill(''));
 }
 
 function saveMandala(data) {
-  const key = getQuarterKey(viewYear, viewQuarter);
-  localStorage.setItem(key, JSON.stringify(data));
+  localStorage.setItem(getQuarterKey(viewYear, viewQuarter), JSON.stringify(data));
   localStorage.setItem('mandala_lastView', JSON.stringify({year:viewYear,quarter:viewQuarter}));
-  showSaveIndicator();
-}
-
-function showSaveIndicator() {
-  const el = document.getElementById('save-indicator');
-  el.classList.add('show');
-  clearTimeout(el._timer);
-  el._timer = setTimeout(() => el.classList.remove('show'), 1500);
+  showToast();
 }
 
 function updateQuarterLabel() {
-  document.getElementById('quarter-label').textContent = `${viewYear}年 Q${viewQuarter}`;
+  document.getElementById('quarter-label').textContent = `${viewYear} Q${viewQuarter}`;
 }
 
 function changeQuarter(dir) {
@@ -600,14 +940,12 @@ function changeQuarter(dir) {
 
 function newQuarter() {
   const next = { ...currentQuarterInfo() };
-  // Move to next quarter
   next.quarter++;
   if (next.quarter > 4) { next.quarter = 1; next.year++; }
   const key = getQuarterKey(next.year, next.quarter);
   if (localStorage.getItem(key)) {
-    if (!confirm(`${next.year}年 Q${next.quarter} は既に存在します。上書きしますか?`)) return;
+    if (!confirm(`${next.year} Q${next.quarter} は既に存在します。上書きしますか?`)) return;
   }
-  // Copy current data as starting point
   const current = loadMandala();
   viewYear = next.year;
   viewQuarter = next.quarter;
@@ -623,53 +961,50 @@ function buildMandalaGrid() {
   const grid = document.getElementById('mandala-grid');
   grid.innerHTML = '';
 
-  for (let blockIdx = 0; blockIdx < 9; blockIdx++) {
+  for (let bi = 0; bi < 9; bi++) {
     const block = document.createElement('div');
-    block.className = 'mandala-block' + (blockIdx === 4 ? ' center-block' : '');
+    block.className = 'mandala-block' + (bi === 4 ? ' center-block' : '');
 
-    for (let cellIdx = 0; cellIdx < 9; cellIdx++) {
+    for (let ci = 0; ci < 9; ci++) {
       const cell = document.createElement('div');
       cell.className = 'mandala-cell';
 
-      const isMainCenter = (blockIdx === 4 && cellIdx === 4);
-      const isSubCenter = (blockIdx === 4 && cellIdx !== 4) || (blockIdx !== 4 && cellIdx === 4);
+      const isMain = (bi === 4 && ci === 4);
+      const isSub = (bi === 4 && ci !== 4) || (bi !== 4 && ci === 4);
 
-      if (isMainCenter) cell.classList.add('center-cell');
-      else if (isSubCenter) cell.classList.add('sub-center');
+      if (isMain) cell.classList.add('center-cell');
+      else if (isSub) cell.classList.add('sub-center');
 
       const ta = document.createElement('textarea');
-      ta.value = mandalaData[blockIdx][cellIdx];
-      ta.placeholder = isMainCenter ? '核心目標' : (isSubCenter ? 'サブ目標' : '');
-      ta.dataset.block = blockIdx;
-      ta.dataset.cell = cellIdx;
+      ta.value = mandalaData[bi][ci];
+      ta.placeholder = isMain ? '核心目標' : (isSub ? 'サブ目標' : '');
+      ta.dataset.block = bi;
+      ta.dataset.cell = ci;
 
       ta.addEventListener('input', function() {
-        const bi = parseInt(this.dataset.block);
-        const ci = parseInt(this.dataset.cell);
-        mandalaData[bi][ci] = this.value;
+        const b = parseInt(this.dataset.block);
+        const c = parseInt(this.dataset.cell);
+        mandalaData[b][c] = this.value;
 
-        // Sync sub-goal labels between center block and surrounding blocks
-        if (bi === 4 && ci !== 4) {
-          // Find the corresponding outer block
-          for (const [outerBlock, centerCell] of Object.entries(blockToCenter)) {
-            if (centerCell === ci) {
-              mandalaData[parseInt(outerBlock)][4] = this.value;
-              const mirror = grid.querySelector(`textarea[data-block="${outerBlock}"][data-cell="4"]`);
-              if (mirror) mirror.value = this.value;
+        if (b === 4 && c !== 4) {
+          for (const [ob, cc] of Object.entries(blockToCenter)) {
+            if (cc === c) {
+              mandalaData[parseInt(ob)][4] = this.value;
+              const m = grid.querySelector(`textarea[data-block="${ob}"][data-cell="4"]`);
+              if (m) m.value = this.value;
             }
           }
-        } else if (bi !== 4 && ci === 4) {
-          // Update center block
-          const centerCell = blockToCenter[bi];
-          if (centerCell !== undefined) {
-            mandalaData[4][centerCell] = this.value;
-            const mirror = grid.querySelector(`textarea[data-block="4"][data-cell="${centerCell}"]`);
-            if (mirror) mirror.value = this.value;
+        } else if (b !== 4 && c === 4) {
+          const cc = blockToCenter[b];
+          if (cc !== undefined) {
+            mandalaData[4][cc] = this.value;
+            const m = grid.querySelector(`textarea[data-block="4"][data-cell="${cc}"]`);
+            if (m) m.value = this.value;
           }
         }
 
-        clearTimeout(ta._saveTimer);
-        ta._saveTimer = setTimeout(() => saveMandala(mandalaData), 500);
+        clearTimeout(ta._st);
+        ta._st = setTimeout(() => saveMandala(mandalaData), 600);
       });
 
       cell.appendChild(ta);
@@ -680,37 +1015,30 @@ function buildMandalaGrid() {
 }
 
 function exportMandala() {
-  const allData = {};
+  const all = {};
   for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key.startsWith('mandala_') && key !== 'mandala_lastView') {
-      allData[key] = JSON.parse(localStorage.getItem(key));
-    }
+    const k = localStorage.key(i);
+    if (k.startsWith('mandala_') && k !== 'mandala_lastView') all[k] = JSON.parse(localStorage.getItem(k));
   }
-  const blob = new Blob([JSON.stringify(allData, null, 2)], {type:'application/json'});
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `mandala_export_${new Date().toISOString().slice(0,10)}.json`;
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(all, null, 2)], {type:'application/json'}));
+  a.download = `mandala_${new Date().toISOString().slice(0,10)}.json`;
   a.click();
 }
 
 function importMandala(event) {
   const file = event.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
+  const r = new FileReader();
+  r.onload = function(e) {
     try {
-      const data = JSON.parse(e.target.result);
-      for (const [key, value] of Object.entries(data)) {
-        localStorage.setItem(key, JSON.stringify(value));
-      }
+      const d = JSON.parse(e.target.result);
+      for (const [k, v] of Object.entries(d)) localStorage.setItem(k, JSON.stringify(v));
       buildMandalaGrid();
-      alert('インポートしました');
-    } catch(err) {
-      alert('ファイルの読み込みに失敗しました');
-    }
+      showToast('インポートしました');
+    } catch(err) { showToast('読み込み失敗'); }
   };
-  reader.readAsText(file);
+  r.readAsText(file);
   event.target.value = '';
 }
 
